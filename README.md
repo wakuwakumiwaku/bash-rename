@@ -1,1 +1,1 @@
-bash script which allows user to rename files according to date of creation and sequential numbering
+rename files according to date of creation and sequential numbering
