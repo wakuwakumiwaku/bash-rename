@@ -90,7 +90,7 @@ class FailureStatusTests(unittest.TestCase):
         self.assertFalse((self.work / 'b.txt').exists())
         self.assertEqual((self.work / '2.pdf').read_bytes(), b'second moves')
 
-    def test_sort_failure_after_output_is_nonzero_even_when_move_succeeds(self):
+    def test_sort_failure_after_output_is_nonzero_without_renaming(self):
         tools = self.root / 'tools'
         tools.mkdir()
         (tools / 'mv').symlink_to(MV)
@@ -100,7 +100,9 @@ class FailureStatusTests(unittest.TestCase):
         (self.work / 'source.txt').write_bytes(b'original')
         result = self.run_script(dict(os.environ, PATH=str(tools)))
         self.assertNotEqual(result.returncode, 0, 'consumer success must not mask sorter failure')
-        self.assertEqual((self.work / '1.pdf').read_bytes(), b'original')
+        self.assertTrue((self.work / 'source.txt').is_file(), 'failed sorting must leave sources in place')
+        self.assertEqual((self.work / 'source.txt').read_bytes(), b'original')
+        self.assertFalse((self.work / '1.pdf').exists())
 
     def test_successful_run_stays_zero(self):
         (self.work / 'source.txt').write_bytes(b'original')
