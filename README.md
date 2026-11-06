@@ -5,6 +5,7 @@ Run with `bash /path/to/rename.bash` from the directory containing the files. Re
 A failed rename or failed sorting command exits nonzero, even if a later entry is
 skipped or renamed successfully. The entire sorted list must be produced successfully before any rename starts; even a sorter that emits partial output and then fails leaves all files untouched. Processing continues after individual rename
 failures; completed renames are not rolled back. Occupied destinations still count
-as ordinary skips, not errors.
+as ordinary skips, not errors. An unreadable current directory exits nonzero
+before sorting or renaming; a readable empty directory remains a successful no-op.
 
 Regression tests: `python3 -m unittest discover -s tests -v`.

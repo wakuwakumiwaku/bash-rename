@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+# Bash leaves an unmatched glob literal when directory listing is denied.
+# Refuse that case instead of treating it like a successful empty directory.
+if [[ ! -r . ]]; then
+    printf '%s\n' 'Cannot read current directory.' >&2
+    exit 1
+fi
+
 # Keep failures from enumeration and from any rename visible to the caller.
 set -o pipefail
 # An empty record cannot be a filename. Send it only after a successful sort,
