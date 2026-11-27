@@ -7,6 +7,11 @@ if [[ ! -r . ]]; then
     exit 1
 fi
 
+# The input set is visible files, independent of the caller's glob settings.
+set +f
+unset GLOBIGNORE
+shopt -u dotglob failglob
+
 # Keep failures from enumeration and from any rename visible to the caller.
 set -o pipefail
 # An empty record cannot be a filename. Send it only after a successful sort,

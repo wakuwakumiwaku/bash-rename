@@ -38,9 +38,9 @@ class RenameTests(unittest.TestCase):
             directory.mkdir()
             self.env[key] = str(directory)
 
-    def run_script(self, script=SCRIPT):
+    def run_script(self, script=SCRIPT, *, cwd=None, env=None):
         result = subprocess.run(
-            [BASH, str(script)], cwd=self.work, env=self.env,
+            [BASH, str(script)], cwd=cwd or self.work, env={**self.env, **(env or {})},
             capture_output=True, timeout=10,
         )
         self.assertEqual(self.canary.read_bytes(), b"do not change\n")
@@ -155,6 +155,24 @@ class RenameTests(unittest.TestCase):
         self.assertTrue((self.work / "a.pdf").is_file(), result.stderr)
         self.assertEqual((self.work / "a.pdf").read_bytes(), b"source")
         self.assertEqual(self.canary.read_bytes(), b"do not change\n")
+
+    def test_caller_globs_do_not_change_which_files_are_renamed(self):
+        profile = self.root / "bash-env"
+        profile.write_text("GLOBIGNORE='*.txt'\n")
+        for setting in ({"BASHOPTS": "dotglob"}, {"SHELLOPTS": "noglob"},
+                        {"BASHOPTS": "failglob"}, {"BASH_ENV": str(profile)}):
+            with self.subTest(setting=setting), tempfile.TemporaryDirectory(dir=self.work) as tmp:
+                work = Path(tmp)
+                (work / ".private").write_bytes(b"hidden")
+                (work / "report.txt").write_bytes(b"report")
+                result = self.run_script(cwd=work, env=setting)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual({p.name: p.read_bytes() for p in work.iterdir()},
+                                 {".private": b"hidden", "1.pdf": b"report"})
+                (work / "1.pdf").unlink()
+                result = self.run_script(cwd=work, env=setting)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual((work / ".private").read_bytes(), b"hidden")
 
     def test_empty_and_hidden_only_directories_are_untouched(self):
         result = self.run_script()
